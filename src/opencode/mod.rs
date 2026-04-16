@@ -209,7 +209,11 @@ pub fn opencode_attach_command(session_id: Option<&str>, worktree_dir: Option<&s
         parts.push(format!("--session {id}"));
     }
 
-    parts.join(" ")
+    // Wrap in bash -c so the tmux session stays alive after opencode exits.
+    // When user types /exit, opencode terminates but bash continues with 'exec bash'
+    // keeping the session alive for reattachment.
+    let inner = parts.join(" ");
+    format!("bash -c '{}'; exec bash", inner.replace('\'', "'\\''"))
 }
 
 pub fn opencode_open_in_web(session_id: &str, worktree_path: &str) -> Result<()> {
@@ -532,7 +536,7 @@ mod tests {
         let command = opencode_attach_command(None, Some("/tmp/worktree"));
         assert_eq!(
             command,
-            "opencode attach http://127.0.0.1:4096 --dir /tmp/worktree"
+            "bash -c 'opencode attach http://127.0.0.1:4096 --dir /tmp/worktree'; exec bash"
         );
     }
 
@@ -541,7 +545,7 @@ mod tests {
         let command = opencode_attach_command(Some("sid-123"), Some("/tmp/worktree"));
         assert_eq!(
             command,
-            "opencode attach http://127.0.0.1:4096 --dir /tmp/worktree --session sid-123"
+            "bash -c 'opencode attach http://127.0.0.1:4096 --dir /tmp/worktree --session sid-123'; exec bash"
         );
     }
 
@@ -550,14 +554,14 @@ mod tests {
         let command = opencode_attach_command(Some("sid-123"), None);
         assert_eq!(
             command,
-            "opencode attach http://127.0.0.1:4096 --session sid-123"
+            "bash -c 'opencode attach http://127.0.0.1:4096 --session sid-123'; exec bash"
         );
     }
 
     #[test]
     fn test_attach_command_without_session_or_dir_uses_attach_base() {
         let command = opencode_attach_command(None, None);
-        assert_eq!(command, "opencode attach http://127.0.0.1:4096");
+        assert_eq!(command, "bash -c 'opencode attach http://127.0.0.1:4096'; exec bash");
     }
 
     struct FakeOpenCode {
