@@ -243,20 +243,16 @@ fn handle_new_task_dialog_key(
         KeyCode::Right if state.focused_field == NewTaskField::UseExistingDirectory => {
             state.use_existing_directory = true;
         }
-        KeyCode::Left if state.focused_field == NewTaskField::Repo => {
-            if !repos.is_empty() {
-                state.repo_idx = state.repo_idx.saturating_sub(1);
-                if let Some(repo) = repos.get(state.repo_idx) {
-                    state.base_input = repo_default_base(repo);
-                }
+        KeyCode::Left if state.focused_field == NewTaskField::Repo && !repos.is_empty() => {
+            state.repo_idx = state.repo_idx.saturating_sub(1);
+            if let Some(repo) = repos.get(state.repo_idx) {
+                state.base_input = repo_default_base(repo);
             }
         }
-        KeyCode::Right if state.focused_field == NewTaskField::Repo => {
-            if !repos.is_empty() {
-                state.repo_idx = (state.repo_idx + 1).min(repos.len() - 1);
-                if let Some(repo) = repos.get(state.repo_idx) {
-                    state.base_input = repo_default_base(repo);
-                }
+        KeyCode::Right if state.focused_field == NewTaskField::Repo && !repos.is_empty() => {
+            state.repo_idx = (state.repo_idx + 1).min(repos.len() - 1);
+            if let Some(repo) = repos.get(state.repo_idx) {
+                state.base_input = repo_default_base(repo);
             }
         }
         KeyCode::Left if state.focused_field == NewTaskField::Create => {
@@ -700,10 +696,8 @@ fn handle_new_project_dialog_key(
         KeyCode::Right if state.focused_field == NewProjectField::Cancel => {
             state.focused_field = NewProjectField::Create;
         }
-        KeyCode::Backspace => {
-            if state.focused_field == NewProjectField::Name {
-                state.name_input.pop();
-            }
+        KeyCode::Backspace if state.focused_field == NewProjectField::Name => {
+            state.name_input.pop();
         }
         KeyCode::Enter => {
             *follow_up = Some(match state.focused_field {
@@ -711,10 +705,8 @@ fn handle_new_project_dialog_key(
                 _ => Message::CreateProject,
             });
         }
-        KeyCode::Char(ch) => {
-            if state.focused_field == NewProjectField::Name {
-                state.name_input.push(ch);
-            }
+        KeyCode::Char(ch) if state.focused_field == NewProjectField::Name => {
+            state.name_input.push(ch);
         }
         _ => {}
     }
@@ -760,10 +752,8 @@ fn handle_category_input_dialog_key(
         KeyCode::Right if state.focused_field == CategoryInputField::Cancel => {
             state.focused_field = CategoryInputField::Confirm;
         }
-        KeyCode::Backspace => {
-            if state.focused_field == CategoryInputField::Name {
-                state.name_input.pop();
-            }
+        KeyCode::Backspace if state.focused_field == CategoryInputField::Name => {
+            state.name_input.pop();
         }
         KeyCode::Enter => {
             *follow_up = Some(match state.focused_field {
@@ -771,10 +761,8 @@ fn handle_category_input_dialog_key(
                 _ => Message::SubmitCategoryInput,
             });
         }
-        KeyCode::Char(ch) => {
-            if state.focused_field == CategoryInputField::Name {
-                state.name_input.push(ch);
-            }
+        KeyCode::Char(ch) if state.focused_field == CategoryInputField::Name => {
+            state.name_input.push(ch);
         }
         _ => {}
     }
@@ -967,10 +955,8 @@ fn handle_edit_task_dialog_key(
         KeyCode::Right if state.focused_field == EditTaskField::Cancel => {
             state.focused_field = EditTaskField::Save;
         }
-        KeyCode::Backspace => {
-            if state.focused_field == EditTaskField::Title {
-                state.title_input.pop();
-            }
+        KeyCode::Backspace if state.focused_field == EditTaskField::Title => {
+            state.title_input.pop();
         }
         KeyCode::Enter => {
             *follow_up = Some(match state.focused_field {
@@ -978,10 +964,8 @@ fn handle_edit_task_dialog_key(
                 _ => Message::ConfirmEditTask,
             });
         }
-        KeyCode::Char(ch) => {
-            if state.focused_field == EditTaskField::Title {
-                state.title_input.push(ch);
-            }
+        KeyCode::Char(ch) if state.focused_field == EditTaskField::Title => {
+            state.title_input.push(ch);
         }
         _ => {}
     }
@@ -1127,10 +1111,8 @@ fn handle_rename_project_dialog_key(
         KeyCode::Right if state.focused_field == RenameProjectField::Cancel => {
             state.focused_field = RenameProjectField::Confirm;
         }
-        KeyCode::Backspace => {
-            if state.focused_field == RenameProjectField::Name {
-                state.name_input.pop();
-            }
+        KeyCode::Backspace if state.focused_field == RenameProjectField::Name => {
+            state.name_input.pop();
         }
         KeyCode::Enter => {
             *follow_up = Some(match state.focused_field {
@@ -1138,10 +1120,8 @@ fn handle_rename_project_dialog_key(
                 _ => Message::ConfirmRenameProject,
             });
         }
-        KeyCode::Char(ch) => {
-            if state.focused_field == RenameProjectField::Name {
-                state.name_input.push(ch);
-            }
+        KeyCode::Char(ch) if state.focused_field == RenameProjectField::Name => {
+            state.name_input.push(ch);
         }
         _ => {}
     }
@@ -1187,10 +1167,8 @@ fn handle_rename_repo_dialog_key(
         KeyCode::Right if state.focused_field == RenameRepoField::Cancel => {
             state.focused_field = RenameRepoField::Confirm;
         }
-        KeyCode::Backspace => {
-            if state.focused_field == RenameRepoField::Name {
-                state.name_input.pop();
-            }
+        KeyCode::Backspace if state.focused_field == RenameRepoField::Name => {
+            state.name_input.pop();
         }
         KeyCode::Enter => {
             *follow_up = Some(match state.focused_field {
@@ -1198,10 +1176,8 @@ fn handle_rename_repo_dialog_key(
                 _ => Message::ConfirmRenameRepo,
             });
         }
-        KeyCode::Char(ch) => {
-            if state.focused_field == RenameRepoField::Name {
-                state.name_input.push(ch);
-            }
+        KeyCode::Char(ch) if state.focused_field == RenameRepoField::Name => {
+            state.name_input.push(ch);
         }
         _ => {}
     }
