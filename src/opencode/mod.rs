@@ -1,6 +1,5 @@
 use std::env;
 use std::path::Path;
-use std::process::Command;
 use std::sync::LazyLock;
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -10,6 +9,7 @@ use reqwest::blocking::Client;
 use serde::Deserialize;
 use urlencoding::encode;
 
+use crate::process::command;
 use crate::tmux::tmux_get_pane_pid;
 use crate::types::SessionStatus;
 
@@ -78,7 +78,7 @@ pub fn opencode_launch(working_dir: &Path, session_id: Option<String>) -> Result
     let binary = opencode_binary();
     ensure_opencode_available(&binary)?;
 
-    let mut cmd = Command::new(&binary);
+    let mut cmd = command(&binary);
     cmd.current_dir(working_dir);
 
     if let Some(existing) = session_id {
@@ -137,7 +137,7 @@ pub fn opencode_resume_session(session_id: &str, working_dir: &Path) -> Result<(
     let binary = opencode_binary();
     ensure_opencode_available(&binary)?;
 
-    let output = Command::new(&binary)
+    let output = command(&binary)
         .args(["-s", session_id])
         .current_dir(working_dir)
         .output()
@@ -167,7 +167,7 @@ pub fn opencode_is_running_in_session(tmux_session_name: &str) -> bool {
         return false;
     };
 
-    let process_output = Command::new("ps")
+    let process_output = command("ps")
         .args(["-p", &pane_pid.to_string(), "-o", "command="])
         .output();
 
@@ -184,7 +184,7 @@ fn opencode_binary() -> String {
 }
 
 fn ensure_opencode_available(binary: &str) -> Result<()> {
-    let output = Command::new(binary).arg("--version").output();
+    let output = command(binary).arg("--version").output();
     match output {
         Ok(output) if output.status.success() => Ok(()),
         Ok(_) => bail!(

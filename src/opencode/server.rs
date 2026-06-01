@@ -1,6 +1,8 @@
 use reqwest::StatusCode;
 use reqwest::blocking::Client;
-use std::process::{Command, Stdio};
+
+use crate::process::command;
+use std::process::Stdio;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -204,7 +206,7 @@ fn is_healthy_response(response: &str) -> bool {
 fn spawn_opencode_server(binary: &str, config: &ServerConfig) -> Result<(), String> {
     let port = config.port.to_string();
 
-    let mut cmd = Command::new(binary);
+    let mut cmd = command(binary);
     if let Some(home_dir) = dirs::home_dir() {
         cmd.current_dir(home_dir);
     }

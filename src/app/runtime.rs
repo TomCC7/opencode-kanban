@@ -8,6 +8,7 @@ use crate::git::{
     git_check_branch_up_to_date, git_create_worktree, git_detect_default_branch, git_fetch,
     git_is_valid_repo, git_remove_worktree,
 };
+use crate::process::command;
 use crate::tmux::{
     PopupThemeStyle, sanitize_session_name_for_project, tmux_create_session, tmux_kill_session,
     tmux_open_session_in_new_terminal, tmux_session_exists, tmux_show_popup, tmux_switch_client,
@@ -120,7 +121,7 @@ impl CreateTaskRuntime for RealCreateTaskRuntime {
     }
 
     fn git_resolve_repo_root(&self, path: &Path) -> Result<PathBuf> {
-        let output = std::process::Command::new("git")
+        let output = command("git")
             .args(["rev-parse", "--show-toplevel"])
             .current_dir(path)
             .output()
@@ -144,7 +145,7 @@ impl CreateTaskRuntime for RealCreateTaskRuntime {
     }
 
     fn git_current_branch(&self, path: &Path) -> Result<String> {
-        let output = std::process::Command::new("git")
+        let output = command("git")
             .args(["branch", "--show-current"])
             .current_dir(path)
             .output()
@@ -171,7 +172,7 @@ impl CreateTaskRuntime for RealCreateTaskRuntime {
     }
 
     fn git_validate_branch(&self, repo_path: &Path, branch_name: &str) -> Result<()> {
-        let output = std::process::Command::new("git")
+        let output = command("git")
             .args(["check-ref-format", "--branch", branch_name])
             .current_dir(repo_path)
             .output()
