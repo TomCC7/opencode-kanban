@@ -484,6 +484,7 @@ jobs:
         env:
           VERSION: ${{ github.ref_name }}
           NPM_TAG: ${{ steps.npm_tag.outputs.npm_tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
