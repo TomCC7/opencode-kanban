@@ -5,7 +5,7 @@ build = "build.rs"
 edition = "2024"
 description = "Terminal kanban board for managing OpenCode tmux sessions"
 license = "MIT"
-repository = "https://github.com/example/opencode-kanban"
+repository = "https://github.com/TomCC7/opencode-kanban"
 
 [package.metadata.wix]
 upgrade-guid = "6F2426D8-489F-4113-8E68-66096E47726E"
