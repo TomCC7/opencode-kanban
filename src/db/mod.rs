@@ -5,7 +5,6 @@ use std::{
     fs,
     future::Future,
     path::{Path, PathBuf},
-    process::Command,
     str::FromStr,
     sync::OnceLock,
 };
@@ -17,6 +16,7 @@ use sqlx::{Row, SqlitePool};
 use tokio::runtime::{Builder as RuntimeBuilder, Handle, RuntimeFlavor};
 use uuid::Uuid;
 
+use crate::process::command;
 use crate::types::{Category, CommandFrequency, Repo, Task};
 
 const DEFAULT_TMUX_STATUS: &str = "unknown";
@@ -1238,7 +1238,7 @@ fn detect_remote_url(path: &Path) -> Option<String> {
 }
 
 fn run_git<const N: usize>(path: &Path, args: [&str; N]) -> Option<String> {
-    let output = Command::new("git")
+    let output = command("git")
         .arg("-C")
         .arg(path)
         .args(args)

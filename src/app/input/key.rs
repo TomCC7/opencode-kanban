@@ -86,15 +86,11 @@ impl App {
                 KeyAction::OpenArchiveView => {
                     self.update(Message::OpenArchiveView)?;
                 }
-                KeyAction::ProjectNext => {
-                    if self.current_view == View::Board {
-                        self.update(Message::SwitchToNextProject)?;
-                    }
+                KeyAction::ProjectNext if self.current_view == View::Board => {
+                    self.update(Message::SwitchToNextProject)?;
                 }
-                KeyAction::ProjectPrev => {
-                    if self.current_view == View::Board {
-                        self.update(Message::SwitchToPrevProject)?;
-                    }
+                KeyAction::ProjectPrev if self.current_view == View::Board => {
+                    self.update(Message::SwitchToPrevProject)?;
                 }
                 _ => {}
             }
@@ -116,11 +112,9 @@ impl App {
                     self.cycle_detail_focus();
                     return Ok(());
                 }
-                KeyCode::Enter | KeyCode::Char('e') => {
-                    if self.detail_focus == DetailFocus::Log {
-                        self.toggle_selected_log_entry(false);
-                        return Ok(());
-                    }
+                KeyCode::Enter | KeyCode::Char('e') if self.detail_focus == DetailFocus::Log => {
+                    self.toggle_selected_log_entry(false);
+                    return Ok(());
                 }
                 KeyCode::Char('f') => {
                     if self.detail_focus == DetailFocus::Log {
@@ -351,10 +345,8 @@ impl App {
                         self.update(Message::DismissDialog)?;
                     }
                 }
-                KeyAction::ToggleCategoryEditMode => {
-                    if self.active_dialog == ActiveDialog::None {
-                        self.category_edit_mode = !self.category_edit_mode;
-                    }
+                KeyAction::ToggleCategoryEditMode if self.active_dialog == ActiveDialog::None => {
+                    self.category_edit_mode = !self.category_edit_mode;
                 }
                 _ => {}
             }

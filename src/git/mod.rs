@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Output;
 
 use anyhow::{Context, Result, bail};
+
+use crate::process::command;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Branch {
@@ -198,7 +200,7 @@ pub fn git_delete_branch(repo_path: &Path, branch_name: &str) -> Result<()> {
 }
 
 pub fn git_is_valid_repo(path: &Path) -> bool {
-    Command::new("git")
+    command("git")
         .args(["rev-parse", "--git-dir"])
         .current_dir(path)
         .output()
@@ -420,7 +422,7 @@ where
         .into_iter()
         .map(|arg| arg.as_ref().to_string())
         .collect();
-    let output = Command::new("git")
+    let output = command("git")
         .args(args_vec.iter().map(String::as_str))
         .current_dir(repo_path)
         .output()
@@ -451,6 +453,7 @@ where
 mod tests {
     use super::*;
     use std::fs;
+    use std::process::Command;
 
     use tempfile::TempDir;
 

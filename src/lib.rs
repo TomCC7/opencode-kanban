@@ -9,6 +9,7 @@ pub mod logging;
 pub mod matching;
 pub mod notification;
 pub mod opencode;
+pub mod process;
 pub mod projects;
 pub mod realm;
 pub mod settings;

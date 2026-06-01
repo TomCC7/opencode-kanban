@@ -7,6 +7,8 @@ use std::process::Command;
 use anyhow::{Context, Result, anyhow, bail};
 use termlauncher::{Application, CustomTerminal, Error as TermlauncherError, Terminal};
 
+use crate::process::{command, tmux_env_args};
+
 const TMUX_SOCKET: &str = "";
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -32,7 +34,7 @@ pub struct TmuxSession {
 }
 
 pub fn ensure_tmux_installed() -> Result<()> {
-    let output = Command::new("tmux")
+    let output = command("tmux")
         .arg("-V")
         .output()
         .context("failed to execute tmux")?;
@@ -90,7 +92,7 @@ pub fn tmux_switch_client(
     tmux_ensure_return_binding()?;
     tmux_ensure_overlay_binding(reopen_lines, style)?;
 
-    let output = Command::new("tmux")
+    let output = command("tmux")
         .args(switch_client_args(session_name))
         .output()
         .context("failed to run tmux switch-client")?;
@@ -139,7 +141,7 @@ pub fn tmux_show_popup(lines: &[String], style: &PopupThemeStyle) -> Result<()> 
 }
 
 fn tmux_ensure_return_binding() -> Result<()> {
-    let output = Command::new("tmux")
+    let output = command("tmux")
         .args(return_binding_args())
         .output()
         .context("failed to configure return key binding")?;
@@ -147,7 +149,7 @@ fn tmux_ensure_return_binding() -> Result<()> {
 }
 
 fn tmux_ensure_overlay_binding(lines: &[String], style: &PopupThemeStyle) -> Result<()> {
-    let output = Command::new("tmux")
+    let output = command("tmux")
         .args(overlay_binding_args(lines, style))
         .output()
         .context("failed to configure attach overlay key binding")?;
@@ -333,7 +335,7 @@ fn sanitize_fragment(input: &str) -> String {
 }
 
 fn tmux_command() -> Command {
-    let mut cmd = Command::new("tmux");
+    let mut cmd = command("tmux");
     let socket = tmux_socket();
     if !socket.is_empty() {
         cmd.args(socket_args(&socket));
@@ -354,14 +356,23 @@ fn has_session_args(session_name: &str) -> Vec<String> {
 }
 
 fn new_session_args(session_name: &str, working_dir: &Path) -> Vec<String> {
-    vec![
-        "new-session".to_string(),
-        "-d".to_string(),
+    new_session_args_with_env(session_name, working_dir, tmux_env_args())
+}
+
+fn new_session_args_with_env(
+    session_name: &str,
+    working_dir: &Path,
+    env_args: Vec<String>,
+) -> Vec<String> {
+    let mut args = vec!["new-session".to_string(), "-d".to_string()];
+    args.extend(env_args);
+    args.extend([
         "-s".to_string(),
         session_name.to_string(),
         "-c".to_string(),
         working_dir.to_string_lossy().to_string(),
-    ]
+    ]);
+    args
 }
 
 fn kill_session_args(session_name: &str) -> Vec<String> {
@@ -619,12 +630,7 @@ mod tests {
     use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
     fn sleep_for(duration: Duration) {
-        if let Ok(runtime) = tokio::runtime::Builder::new_current_thread()
-            .enable_time()
-            .build()
-        {
-            runtime.block_on(tokio::time::sleep(duration));
-        }
+        std::thread::sleep(duration);
     }
 
     struct SessionCleanup {
@@ -665,6 +671,19 @@ mod tests {
             sleep_for(Duration::from_millis(50));
         }
         None
+    }
+
+    fn wait_for_file_contents(path: &Path, expected: &str, timeout: Duration) -> bool {
+        let start = Instant::now();
+        while start.elapsed() < timeout {
+            if let Ok(contents) = std::fs::read_to_string(path)
+                && contents == expected
+            {
+                return true;
+            }
+            sleep_for(Duration::from_millis(50));
+        }
+        false
     }
 
     #[test]
@@ -728,10 +747,40 @@ mod tests {
 
     #[test]
     fn test_new_session_args_builder() {
-        let args = new_session_args("ok-test", Path::new("/tmp/worktree"));
+        let args = new_session_args_with_env("ok-test", Path::new("/tmp/worktree"), Vec::new());
         assert_eq!(
             args,
             vec!["new-session", "-d", "-s", "ok-test", "-c", "/tmp/worktree"]
+        );
+    }
+
+    #[test]
+    fn test_new_session_args_builder_forwards_env() {
+        let args = new_session_args_with_env(
+            "ok-test",
+            Path::new("/tmp/worktree"),
+            vec![
+                "-e".to_string(),
+                "GIT_LFS_SKIP_SMUDGE=1".to_string(),
+                "-e".to_string(),
+                "GIT_SSH_COMMAND=ssh -i /tmp/key".to_string(),
+            ],
+        );
+
+        assert_eq!(
+            args,
+            vec![
+                "new-session",
+                "-d",
+                "-e",
+                "GIT_LFS_SKIP_SMUDGE=1",
+                "-e",
+                "GIT_SSH_COMMAND=ssh -i /tmp/key",
+                "-s",
+                "ok-test",
+                "-c",
+                "/tmp/worktree"
+            ]
         );
     }
 
@@ -921,6 +970,40 @@ mod tests {
             let _ = tmux_kill_session(&session_name);
         }
         assert!(!tmux_session_exists(&session_name));
+    }
+
+    #[test]
+    fn test_tmux_create_session_forwards_launch_env() {
+        if !tmux_available() {
+            return;
+        }
+        let Ok(expected) = std::env::var("GIT_LFS_SKIP_SMUDGE") else {
+            return;
+        };
+        let session_name = unique_session_name("env");
+        let _cleanup = SessionCleanup::new(session_name.clone());
+        let output_path = std::env::temp_dir().join(format!(
+            "opencode-kanban-env-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("system time should be valid")
+                .as_nanos()
+        ));
+        let output_path_string = output_path.to_string_lossy().to_string();
+        let pane_command = format!(
+            "printf '%s' \"$GIT_LFS_SKIP_SMUDGE\" > {}; sleep 2",
+            shell_single_quote(&output_path_string)
+        );
+
+        tmux_create_session(&session_name, Path::new("."), Some(&pane_command))
+            .expect("create session should succeed");
+
+        assert!(wait_for_file_contents(
+            &output_path,
+            &expected,
+            Duration::from_secs(2)
+        ));
+        let _ = std::fs::remove_file(&output_path);
     }
 
     fn tmux_available() -> bool {

@@ -30,6 +30,8 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,13 +70,14 @@ jobs:
         run: cargo llvm-cov --lib --codecov --output-path codecov.json
 
       - name: Upload coverage to Codecov
+        if: ${{ env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v4
         with:
           files: ./codecov.json
           flags: unittests
           name: code-coverage
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
 
   lint:
     name: Lint
