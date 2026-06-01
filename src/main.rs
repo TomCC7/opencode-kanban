@@ -1,7 +1,6 @@
 use std::{
     io::{self, Write},
     panic,
-    process::Command,
     str::FromStr,
     sync::{
         Arc, Mutex,
@@ -27,6 +26,7 @@ use opencode_kanban::{
     app::App,
     cli::{self, RootCommand},
     logging::{init_logging, print_log_location},
+    process::{command, launch_env, tmux_env_args},
     realm::{RootId, apply_message, init_application, should_quit},
     theme::ThemePreset,
     tmux::{ensure_tmux_installed, tmux_session_exists},
@@ -100,6 +100,7 @@ async fn main() -> Result<()> {
 }
 
 fn run_app() -> Result<RunOutcome> {
+    let _ = launch_env();
     let cli = Cli::parse();
 
     if let Some(command) = cli.command {
@@ -177,7 +178,7 @@ fn validate_runtime_environment() -> Result<()> {
         let exe_path = current_exe.to_string_lossy();
 
         if tmux_session_exists(session_name) {
-            let status = Command::new("tmux")
+            let status = command("tmux")
                 .args(["attach-session", "-t", session_name])
                 .status()
                 .context("failed to attach to tmux session")?;
@@ -185,16 +186,17 @@ fn validate_runtime_environment() -> Result<()> {
             std::process::exit(0);
         }
 
-        let status = Command::new("tmux")
-            .args([
-                "new-session",
-                "-A",
-                "-s",
-                session_name,
-                "-c",
-                ".",
-                exe_path.as_ref(),
-            ])
+        let mut args = vec!["new-session".to_string(), "-A".to_string()];
+        args.extend(tmux_env_args());
+        args.extend([
+            "-s".to_string(),
+            session_name.to_string(),
+            "-c".to_string(),
+            ".".to_string(),
+            exe_path.to_string(),
+        ]);
+        let status = command("tmux")
+            .args(args)
             .status()
             .context("failed to create tmux session")?;
         ensure_command_succeeded("tmux new-session", status)?;
