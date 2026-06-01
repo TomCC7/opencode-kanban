@@ -3,8 +3,7 @@ use std::ffi::{OsStr, OsString};
 use std::process::Command;
 use std::sync::LazyLock;
 
-static LAUNCH_ENV: LazyLock<Vec<(OsString, OsString)>> =
-    LazyLock::new(|| env::vars_os().collect());
+static LAUNCH_ENV: LazyLock<Vec<(OsString, OsString)>> = LazyLock::new(|| env::vars_os().collect());
 
 pub fn launch_env() -> Vec<(OsString, OsString)> {
     LAUNCH_ENV.clone()

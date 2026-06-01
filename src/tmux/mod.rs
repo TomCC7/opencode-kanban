@@ -364,10 +364,7 @@ fn new_session_args_with_env(
     working_dir: &Path,
     env_args: Vec<String>,
 ) -> Vec<String> {
-    let mut args = vec![
-        "new-session".to_string(),
-        "-d".to_string(),
-    ];
+    let mut args = vec!["new-session".to_string(), "-d".to_string()];
     args.extend(env_args);
     args.extend([
         "-s".to_string(),
