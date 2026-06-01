@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
-          URL="https://github.com/qrafty-ai/opencode-kanban/archive/refs/tags/v${VERSION}.tar.gz"
+          URL="https://github.com/TomCC7/opencode-kanban/archive/refs/tags/v${VERSION}.tar.gz"
           SHA256="$(curl -fsSL "${URL}" | sha256sum | awk '{print $1}')"
           echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
           echo "Tarball URL: ${URL}"
