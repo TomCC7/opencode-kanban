@@ -10,6 +10,7 @@ pub mod matching;
 pub mod notification;
 pub mod opencode;
 pub mod projects;
+pub mod process;
 pub mod realm;
 pub mod settings;
 pub mod task_palette;
