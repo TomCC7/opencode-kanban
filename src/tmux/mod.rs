@@ -9,6 +9,9 @@ use termlauncher::{Application, CustomTerminal, Error as TermlauncherError, Term
 
 use crate::process::{command, tmux_env_args};
 
+mod status_bar;
+pub use status_bar::{TaskStatusBarSpec, render_task_status_bar, tmux_apply_task_status_bar};
+
 const TMUX_SOCKET: &str = "";
 
 #[derive(Debug, Clone, Eq, PartialEq)]
