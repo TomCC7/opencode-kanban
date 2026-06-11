@@ -516,6 +516,11 @@ fn task_create(db: &Database, project: &str, args: TaskCreateArgs) -> CliResult<
         Some(value) => value,
         None => resolve_default_category_id(db)?,
     };
+    let category_title = db
+        .get_category(category_id)
+        .context("failed to load task category")
+        .map_err(classify_db_error)?
+        .name;
 
     let branch = args.branch.trim();
     if branch.is_empty() {
@@ -636,6 +641,16 @@ fn task_create(db: &Database, project: &str, args: TaskCreateArgs) -> CliResult<
             .add_task(repo.id, branch, &args.title, category_id)
             .context("failed to save task")?;
         created_task_id = Some(task.id);
+
+        CreateTaskRuntime::tmux_apply_task_status_bar(
+            &runtime,
+            &session_name,
+            &category_title,
+            &task.title,
+            &task.branch,
+            &task.id.to_string(),
+        )
+        .context("failed to configure task tmux status bar")?;
 
         db.update_task_tmux(
             task.id,

@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use tracing::warn;
 use tuirealm::ratatui::style::Color;
 use uuid::Uuid;
@@ -91,9 +91,20 @@ fn ensure_task_session_with_runtime(
         ));
     }
 
+    let category_title = task_status_bar_category_title(db, task);
+
     if let Some(session_name) = task.tmux_session_name.as_deref()
         && runtime.session_exists(session_name)
     {
+        runtime
+            .apply_task_status_bar(
+                session_name,
+                &category_title,
+                &task.title,
+                &task.branch,
+                &task.id.to_string(),
+            )
+            .context("failed to configure task tmux status bar")?;
         let working_dir = task
             .worktree_path
             .as_deref()
@@ -131,6 +142,15 @@ fn ensure_task_session_with_runtime(
     );
 
     runtime.create_session(&session_name, worktree_path, &command)?;
+    runtime
+        .apply_task_status_bar(
+            &session_name,
+            &category_title,
+            &task.title,
+            &task.branch,
+            &task.id.to_string(),
+        )
+        .context("failed to configure task tmux status bar")?;
     db.update_task_tmux(
         task.id,
         Some(session_name.clone()),
@@ -142,6 +162,21 @@ fn ensure_task_session_with_runtime(
         session_name,
         working_dir: worktree_path.to_path_buf(),
     }))
+}
+
+fn task_status_bar_category_title(db: &Database, task: &Task) -> String {
+    match db.get_category(task.category_id) {
+        Ok(category) => category.name,
+        Err(err) => {
+            warn!(
+                error = %err,
+                task_id = %task.id,
+                category_id = %task.category_id,
+                "failed to load task category for tmux status bar"
+            );
+            "TASK".to_string()
+        }
+    }
 }
 
 fn maybe_show_attach_popup(

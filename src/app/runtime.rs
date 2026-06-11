@@ -10,8 +10,9 @@ use crate::git::{
 };
 use crate::process::command;
 use crate::tmux::{
-    PopupThemeStyle, sanitize_session_name_for_project, tmux_create_session, tmux_kill_session,
-    tmux_open_session_in_new_terminal, tmux_session_exists, tmux_show_popup, tmux_switch_client,
+    PopupThemeStyle, sanitize_session_name_for_project, tmux_apply_task_status_bar,
+    tmux_create_session, tmux_kill_session, tmux_open_session_in_new_terminal, tmux_session_exists,
+    tmux_show_popup, tmux_switch_client,
 };
 
 /// Runtime trait for task recovery operations
@@ -20,6 +21,14 @@ pub trait RecoveryRuntime {
     fn worktree_exists(&self, worktree_path: &Path) -> bool;
     fn session_exists(&self, session_name: &str) -> bool;
     fn create_session(&self, session_name: &str, working_dir: &Path, command: &str) -> Result<()>;
+    fn apply_task_status_bar(
+        &self,
+        session_name: &str,
+        category_title: &str,
+        task_title: &str,
+        branch_name: &str,
+        color_seed: &str,
+    ) -> Result<()>;
     fn switch_client(
         &self,
         session_name: &str,
@@ -54,6 +63,23 @@ impl RecoveryRuntime for RealRecoveryRuntime {
 
     fn create_session(&self, session_name: &str, working_dir: &Path, command: &str) -> Result<()> {
         tmux_create_session(session_name, working_dir, Some(command))
+    }
+
+    fn apply_task_status_bar(
+        &self,
+        session_name: &str,
+        category_title: &str,
+        task_title: &str,
+        branch_name: &str,
+        color_seed: &str,
+    ) -> Result<()> {
+        tmux_apply_task_status_bar(
+            session_name,
+            category_title,
+            task_title,
+            branch_name,
+            color_seed,
+        )
     }
 
     fn switch_client(
@@ -108,6 +134,14 @@ pub trait CreateTaskRuntime {
         session_name: &str,
         working_dir: &Path,
         command: Option<&str>,
+    ) -> Result<()>;
+    fn tmux_apply_task_status_bar(
+        &self,
+        session_name: &str,
+        category_title: &str,
+        task_title: &str,
+        branch_name: &str,
+        color_seed: &str,
     ) -> Result<()>;
     fn tmux_kill_session(&self, session_name: &str) -> Result<()>;
 }
@@ -223,6 +257,23 @@ impl CreateTaskRuntime for RealCreateTaskRuntime {
         command: Option<&str>,
     ) -> Result<()> {
         tmux_create_session(session_name, working_dir, command)
+    }
+
+    fn tmux_apply_task_status_bar(
+        &self,
+        session_name: &str,
+        category_title: &str,
+        task_title: &str,
+        branch_name: &str,
+        color_seed: &str,
+    ) -> Result<()> {
+        tmux_apply_task_status_bar(
+            session_name,
+            category_title,
+            task_title,
+            branch_name,
+            color_seed,
+        )
     }
 
     fn tmux_kill_session(&self, session_name: &str) -> Result<()> {
@@ -392,6 +443,17 @@ mod tests {
             _session_name: &str,
             _working_dir: &Path,
             _command: &str,
+        ) -> Result<()> {
+            Ok(())
+        }
+
+        fn apply_task_status_bar(
+            &self,
+            _session_name: &str,
+            _category_title: &str,
+            _task_title: &str,
+            _branch_name: &str,
+            _color_seed: &str,
         ) -> Result<()> {
             Ok(())
         }

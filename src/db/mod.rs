@@ -1046,7 +1046,7 @@ impl Database {
         map_repo_row(&row)
     }
 
-    async fn get_category_async(&self, id: Uuid) -> Result<Category> {
+    pub async fn get_category_async(&self, id: Uuid) -> Result<Category> {
         let row = sqlx::query(
             "SELECT id, slug, name, position, color, created_at FROM categories WHERE id = ?",
         )
@@ -1056,6 +1056,10 @@ impl Database {
 
         let row = row.with_context(|| format!("category {id} not found"))?;
         map_category_row(&row)
+    }
+
+    pub fn get_category(&self, id: Uuid) -> Result<Category> {
+        block_on_db(self.get_category_async(id))
     }
 }
 

@@ -996,6 +996,17 @@ mod tests {
             Ok(())
         }
 
+        fn apply_task_status_bar(
+            &self,
+            _session_name: &str,
+            _category_title: &str,
+            _task_title: &str,
+            _branch_name: &str,
+            _color_seed: &str,
+        ) -> Result<()> {
+            Ok(())
+        }
+
         fn switch_client(
             &self,
             session_name: &str,

@@ -153,6 +153,10 @@ pub(crate) fn create_task_pipeline_with_runtime(
     let mut created_task_id: Option<Uuid> = None;
     let branch_name = branch.clone();
     let resolved_title = resolve_task_title(state.title_input.trim(), &branch_name);
+    let category_title = db
+        .get_category(todo_category_id)
+        .context("failed to load task category")?
+        .name;
 
     let mut operation = || -> Result<()> {
         let session_name =
@@ -171,6 +175,16 @@ pub(crate) fn create_task_pipeline_with_runtime(
             .add_task(repo.id, &branch_name, &resolved_title, todo_category_id)
             .context("failed to save task")?;
         created_task_id = Some(task.id);
+
+        runtime
+            .tmux_apply_task_status_bar(
+                &session_name,
+                &category_title,
+                &task.title,
+                &task.branch,
+                &task.id.to_string(),
+            )
+            .context("failed to configure task tmux status bar")?;
 
         db.update_task_tmux(
             task.id,
